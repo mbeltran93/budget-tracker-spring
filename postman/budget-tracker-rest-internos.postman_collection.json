@@ -1,0 +1,297 @@
+{
+  "info": {
+    "name": "Budget Tracker - REST internos (/api/expenses, /api/dashboard)",
+    "description": "Coleccion de los endpoints REST internos que jQuery consume desde el dashboard (CRUD de gastos sin recargar la pagina). La app usa autenticacion por sesion + CSRF (Spring Security clasico), no tokens Bearer, asi que la coleccion primero hace login (form login) y luego reusa la cookie de sesion + el header CSRF en cada request. Correr las carpetas en orden: '0. Autenticacion' y despues '1. Gastos' / '2. Dashboard'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "0. Autenticacion",
+      "item": [
+        {
+          "name": "Obtener pagina de login (cookie + token CSRF inicial)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const match = html.match(/name=\"_csrf\" content=\"([^\"]+)\"/);",
+                  "pm.expect(match, 'no se encontro el meta _csrf en /login').to.not.be.null;",
+                  "pm.collectionVariables.set('csrfToken', match[1]);",
+                  "pm.test('GET /login responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (POST /login, form-urlencoded)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "username", "value": "{{demoEmail}}" },
+                { "key": "password", "value": "{{demoPassword}}" },
+                { "key": "_csrf", "value": "{{csrfToken}}" }
+              ]
+            },
+            "url": { "raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"] }
+          },
+          "protocolProfileBehavior": { "followRedirects": false },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login redirige (302) a /dashboard', () => {",
+                  "  pm.expect(pm.response.code).to.equal(302);",
+                  "  pm.expect(pm.response.headers.get('Location')).to.include('/dashboard');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refrescar token CSRF post-login (GET /dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/dashboard", "host": ["{{baseUrl}}"], "path": ["dashboard"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const html = pm.response.text();",
+                  "const token = html.match(/name=\"_csrf\" content=\"([^\"]+)\"/);",
+                  "const header = html.match(/name=\"_csrf_header\" content=\"([^\"]+)\"/);",
+                  "pm.expect(token, 'no se encontro el meta _csrf en /dashboard').to.not.be.null;",
+                  "pm.collectionVariables.set('csrfToken', token[1]);",
+                  "pm.collectionVariables.set('csrfHeaderName', header ? header[1] : 'X-CSRF-TOKEN');",
+                  "pm.test('GET /dashboard responde 200 (sesion activa)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Gastos (/api/expenses)",
+      "item": [
+        {
+          "name": "Listar gastos del usuario actual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/expenses", "host": ["{{baseUrl}}"], "path": ["api", "expenses"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('devuelve un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear gasto",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "{{csrfHeaderName}}", "value": "{{csrfToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"amount\": 42.50,\n  \"description\": \"Compra de prueba (Postman)\",\n  \"date\": \"{{todayIso}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/expenses", "host": ["{{baseUrl}}"], "path": ["api", "expenses"] }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.collectionVariables.set('todayIso', new Date().toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('expenseId', body.id);",
+                  "pm.test('el monto coincide', () => pm.expect(body.amount).to.equal(42.5));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar el gasto creado",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "{{csrfHeaderName}}", "value": "{{csrfToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"amount\": 99.99,\n  \"description\": \"Compra de prueba editada (Postman)\",\n  \"date\": \"{{todayIso}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{expenseId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('el monto se actualizo', () => pm.expect(pm.response.json().amount).to.equal(99.99));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear gasto con monto invalido (debe fallar con 400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "{{csrfHeaderName}}", "value": "{{csrfToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoryId\": 1,\n  \"amount\": -5,\n  \"description\": \"Monto invalido\",\n  \"date\": \"{{todayIso}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/expenses", "host": ["{{baseUrl}}"], "path": ["api", "expenses"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('el cuerpo trae el detalle del error', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.error).to.equal('Bad Request');",
+                  "  pm.expect(body.details).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar el gasto creado",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "{{csrfHeaderName}}", "value": "{{csrfToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{expenseId}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar un gasto inexistente (debe fallar con 404)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "{{csrfHeaderName}}", "value": "{{csrfToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "999999"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Dashboard (/api/dashboard)",
+      "item": [
+        {
+          "name": "Resumen del mes (total + presupuesto por categoria)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/dashboard/summary", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "summary"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('trae totalThisMonth y categories', () => {",
+                  "  pm.expect(body).to.have.property('totalThisMonth');",
+                  "  pm.expect(body.categories).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "demoEmail", "value": "demo@budgettracker.com" },
+    { "key": "demoPassword", "value": "demo1234" },
+    { "key": "csrfToken", "value": "" },
+    { "key": "csrfHeaderName", "value": "X-CSRF-TOKEN" },
+    { "key": "expenseId", "value": "" },
+    { "key": "todayIso", "value": "" }
+  ]
+}
