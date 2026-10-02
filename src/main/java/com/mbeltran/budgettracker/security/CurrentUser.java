@@ -13,6 +13,10 @@ public final class CurrentUser {
         if (principal instanceof AppUserPrincipal appUserPrincipal) {
             return appUserPrincipal.getId();
         }
+        // Login social (Google/Facebook, OIDC o OAuth2 plano): AppOidcUser/AppOAuth2User.
+        if (principal instanceof LocalUserIdAware localUserIdAware) {
+            return localUserIdAware.getLocalUserId();
+        }
         throw new IllegalStateException("No hay un usuario autenticado en el contexto de seguridad");
     }
 }

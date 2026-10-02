@@ -34,6 +34,18 @@
                 <button type="submit" class="btn btn-primary w-100">Ingresar</button>
             </form>
 
+            <div class="text-center text-muted my-3">
+                <small>o ingresa con</small>
+            </div>
+            <div class="d-grid gap-2">
+                <a th:href="@{/oauth2/authorization/google}" class="btn btn-outline-danger">
+                    Iniciar sesion con Google
+                </a>
+                <a th:href="@{/oauth2/authorization/facebook}" class="btn btn-outline-primary">
+                    Iniciar sesion con Facebook
+                </a>
+            </div>
+
             <p class="text-center mt-3 mb-0">
                 <small>No tenes cuenta? <a th:href="@{/register}">Registrate</a></small>
             </p>
