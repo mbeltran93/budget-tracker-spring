@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Budget Tracker - Ingresar</title>
+    <th:block th:replace="~{fragments/common :: head-common}"></th:block>
+</head>
+<body>
+<div class="container">
+    <div class="card auth-card shadow-sm">
+        <div class="card-body p-4">
+            <h3 class="card-title mb-3 text-center">Budget Tracker</h3>
+            <p class="text-muted text-center mb-4">Ingresa para ver tu presupuesto</p>
+
+            <div class="alert alert-danger" th:if="${param.error}">
+                Email o contrasena incorrectos.
+            </div>
+            <div class="alert alert-success" th:if="${param.logout}">
+                Sesion cerrada correctamente.
+            </div>
+            <div class="alert alert-success" th:if="${param.registered}">
+                Cuenta creada. Ya podes iniciar sesion.
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="username" name="username"
+                           placeholder="demo@budgettracker.com" required autofocus/>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contrasena</label>
+                    <input type="password" class="form-control" id="password" name="password" required/>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+            </form>
+
+            <p class="text-center mt-3 mb-0">
+                <small>No tenes cuenta? <a th:href="@{/register}">Registrate</a></small>
+            </p>
+            <p class="text-center text-muted mt-2 mb-0">
+                <small>Demo: demo&#64;budgettracker.com / demo1234</small>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

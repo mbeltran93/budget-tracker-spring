@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Budget Tracker - Categorias</title>
+    <th:block th:replace="~{fragments/common :: head-common}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{fragments/common :: navbar}"></th:block>
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Categorias</h3>
+        <a class="btn btn-primary" th:href="@{/categories/new}">+ Nueva categoria</a>
+    </div>
+
+    <div class="alert alert-success" th:if="${message}" th:text="${message}"></div>
+
+    <div class="card stat-card">
+        <div class="card-body">
+            <table class="table align-middle">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Limite mensual</th>
+                    <th>Gastado este mes</th>
+                    <th style="width: 30%;">Uso del presupuesto</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${budgetOverview}">
+                    <td th:text="${item.categoryName}">Categoria</td>
+                    <td th:text="${'$' + #numbers.formatDecimal(item.monthlyLimit, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td th:text="${'$' + #numbers.formatDecimal(item.spent, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                        <div class="progress">
+                            <div class="progress-bar" th:classappend="'bg-' + ${item.status.bootstrapClass}"
+                                 th:style="'width: ' + ${item.percentUsed} + '%'"
+                                 th:text="${item.percentUsed} + '%'">0%</div>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-sm btn-outline-secondary" th:href="@{/categories/{id}/edit(id=${item.categoryId})}">Editar</a>
+                        <form class="d-inline" th:action="@{/categories/{id}/delete(id=${item.categoryId})}" method="post"
+                              onsubmit="return confirm('Borrar esta categoria? Tambien se borraran sus gastos.');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Borrar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${#lists.isEmpty(budgetOverview)}" class="text-muted mb-0">
+                Todavia no hay categorias creadas.
+            </p>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/common :: scripts-common}"></th:block>
+</body>
+</html>

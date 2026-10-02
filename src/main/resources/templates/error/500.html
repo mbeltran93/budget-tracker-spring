@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>500 - Error interno</title>
+    <th:block th:replace="~{fragments/common :: head-common}"></th:block>
+</head>
+<body>
+<div class="container">
+    <div class="text-center" style="margin-top: 6rem;">
+        <h1 class="display-4">500</h1>
+        <p class="lead">Ocurrio un error inesperado. Intenta de nuevo en unos minutos.</p>
+        <a class="btn btn-primary" th:href="@{/dashboard}">Volver al dashboard</a>
+    </div>
+</div>
+</body>
+</html>

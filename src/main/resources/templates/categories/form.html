@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="${categoryForm.id} != null ? 'Editar categoria' : 'Nueva categoria'">Categoria</title>
+    <th:block th:replace="~{fragments/common :: head-common}"></th:block>
+</head>
+<body>
+<th:block th:replace="~{fragments/common :: navbar}"></th:block>
+
+<div class="container">
+    <h3 class="mb-4" th:text="${categoryForm.id} != null ? 'Editar categoria' : 'Nueva categoria'">Categoria</h3>
+
+    <div class="card stat-card" style="max-width: 480px;">
+        <div class="card-body">
+            <form th:action="${categoryForm.id} != null ? @{/categories/{id}(id=${categoryForm.id})} : @{/categories}"
+                  th:object="${categoryForm}" method="post">
+                <input type="hidden" th:field="*{id}"/>
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}"
+                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid'"/>
+                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="monthlyLimit" class="form-label">Limite mensual</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="0.01" min="0" class="form-control" id="monthlyLimit"
+                               th:field="*{monthlyLimit}"
+                               th:classappend="${#fields.hasErrors('monthlyLimit')} ? 'is-invalid'"/>
+                    </div>
+                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('monthlyLimit')}" th:errors="*{monthlyLimit}"></div>
+                </div>
+                <div class="d-flex justify-content-end gap-2">
+                    <a class="btn btn-outline-secondary" th:href="@{/categories}">Cancelar</a>
+                    <button type="submit" id="btnSaveCategory" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/common :: scripts-common}"></th:block>
+</body>
+</html>
