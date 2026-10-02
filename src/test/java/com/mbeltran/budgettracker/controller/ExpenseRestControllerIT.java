@@ -95,7 +95,11 @@ class ExpenseRestControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void postWithoutCsrfTokenIsForbidden() throws Exception {
+    void postWithoutCsrfTokenSucceedsBecauseApiChainHasCsrfDisabled() throws Exception {
+        // /api/** ahora vive en su propia SecurityFilterChain (ver SecurityConfig), sin CSRF:
+        // el cliente movil (JWT) nunca manda token CSRF, y el cliente jQuery (sesion) ya no
+        // lo necesita. Antes de la introduccion del JWT esto devolvia 403; ese comportamiento
+        // quedo intencionalmente obsoleto por el nuevo requisito de la API.
         MockHttpSession session = LoginSupport.loginAsDemoUser(mockMvc);
         ExpenseRequest createRequest = new ExpenseRequest(1L, new BigDecimal("10.00"), "sin csrf", LocalDate.now());
 
@@ -103,6 +107,6 @@ class ExpenseRestControllerIT extends AbstractIntegrationTest {
                         .session(session)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated());
     }
 }
