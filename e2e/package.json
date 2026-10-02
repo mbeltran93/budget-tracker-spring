@@ -1,0 +1,12 @@
+{
+  "name": "budget-tracker-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Suite de Playwright que simula un usuario real navegando Budget Tracker (login, alta/edicion/borrado de gastos via AJAX, alta de categoria con recarga de pagina, logout).",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}
